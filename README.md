@@ -4,7 +4,6 @@
 
 For this project, we will be using data from the [Waymo Open dataset](https://waymo.com/open/).
 
-[OPTIONAL] - The files can be downloaded directly from the website as tar files or from the [Google Cloud Bucket](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_2_0_individual_files/) as individual tf records. We have already provided the data required to finish this project in the workspace, so you don't need to download it separately.
 
 ## Structure
 
@@ -19,12 +18,12 @@ The data you will use for training, validation and testing is organized as follo
     - test - contains 3 files to test your model and create inference videos
 ```
 The `training_and_validation` folder contains file that have been downsampled: we have selected one every 10 frames from 10 fps videos. The `testing` folder contains frames from the 10 fps video without downsampling.
-```
-You will split this `training_and_validation` data into `train`, and `val` sets by completing and executing the `create_splits.py` file.
+
 
 
 ### Experiments
 The experiments folder will be organized as follow:
+
 ```
 experiments/
     - pretrained_model/
@@ -38,55 +37,37 @@ experiments/
     ...
 ```
 
-## Prerequisites
-
-### Local Setup
-
-For local setup if you have your own Nvidia GPU, you can use the provided Dockerfile and requirements in the [build directory](./build).
-
-Follow [the README therein](./build/README.md) to create a docker container and install all prerequisites.
-
-### Download and process the data
-
-**Note:** ”If you are using the classroom workspace, we have already completed the steps in the section for you. You can find the downloaded and processed files within the `/home/workspace/data/preprocessed_data/` directory. Check this out then proceed to the **Exploratory Data Analysis** part.
-
-The first goal of this project is to download the data from the Waymo's Google Cloud bucket to your local machine. For this project, we only need a subset of the data provided (for example, we do not need to use the Lidar data). Therefore, we are going to download and trim immediately each file. In `download_process.py`, you can view the `create_tf_example` function, which will perform this processing. This function takes the components of a Waymo Tf record and saves them in the Tf Object Detection api format. An example of such function is described [here](https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/training.html#create-tensorflow-records). We are already providing the `label_map.pbtxt` file.
-
-You can run the script using the following command:
-```
-python download_process.py --data_dir {processed_file_location} --size {number of files you want to download}
-```
-
-You are downloading 100 files (unless you changed the `size` parameter) so be patient! Once the script is done, you can look inside your `data_dir` folder to see if the files have been downloaded and processed correctly.
+I have used Classroom Workspace for implementing the project.
 
 ### Classroom Workspace
 
-In the classroom workspace, every library and package should already be installed in your environment. You will NOT need to make use of `gcloud` to download the images.
+In the classroom workspace, every library and package should already be installed in your environment.
 
 ## Instructions
 
 ### Exploratory Data Analysis
 
-You should use the data already present in `/home/workspace/data/waymo` directory to explore the dataset! This is the most important task of any machine learning project. To do so, open the `Exploratory Data Analysis` notebook. In this notebook, your first task will be to implement a `display_instances` function to display images and annotations using `matplotlib`. This should be very similar to the function you created during the course. Once you are done, feel free to spend more time exploring the data and report your findings. Report anything relevant about the dataset in the writeup.
+ The waymo dataset contains information about images and associated bounding boxes with each image. we have detected three types of objects vehicles, pedestrians and cyclists.
 
-Keep in mind that you should refer to this analysis to create the different spits (training, testing and validation).
+The function **display_images** will randomly display 10 images as shown below:
 
+<img src="eda_image\download_4.png" width="100">  <img src="eda_image\download_5.png" width= "100"> <img src="eda_image\download_6.png" width="100">  <img src="eda_image\download_8.png" width= "100"> <img src="eda_image\download_13.png" width="100">
 
-### Create the training - validation splits
-In the class, we talked about cross-validation and the importance of creating meaningful training and validation splits. For this project, you will have to create your own training and validation sets using the files located in `/home/workspace/data/waymo`. The `split` function in the `create_splits.py` file does the following:
-* create three subfolders: `/home/workspace/data/train/`, `/home/workspace/data/val/`, and `/home/workspace/data/test/`
-* split the tf records files between these three folders by symbolically linking the files from `/home/workspace/data/waymo/` to `/home/workspace/data/train/`, `/home/workspace/data/val/`, and `/home/workspace/data/test/`
+<img src="eda_image\download_9.png" width="100">  <img src="eda_image\download_10.png" width= "100"><img src="eda_image\download_11.png" width="100">  <img src="eda_image\download_12.png" width= "100">
+<img src="eda_image\download_14.png" width= "100">
 
-Use the following command to run the script once your function is implemented:
-```
-python create_splits.py --data-dir /home/workspace/data
-```
+Further, I have randomly selected some samples to get an idea about class distribution.
+
+It's observed that the dataset  is highly imbalanced.
+
+The figure below shows that number of vehicle is much more than pedestrain and cyclist.
+<img src="eda_image\download_15.png" width= "200">
 
 ### Edit the config file
 
-Now you are ready for training. As we explain during the course, the Tf Object Detection API relies on **config files**. The config that we will use for this project is `pipeline.config`, which is the config for a SSD Resnet 50 640x640 model. You can learn more about the Single Shot Detector [here](https://arxiv.org/pdf/1512.02325.pdf).
+Object Detection API relies on config files. The config that we will use for this project is pipeline.config, which is the config for a SSD Resnet 50 640x640 model. You can learn more about the Single Shot Detector here.
 
-First, let's download the [pretrained model](http://download.tensorflow.org/models/object_detection/tf2/20200711/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.tar.gz) and move it to `/home/workspace/experiments/pretrained_model/`.
+First, let's download the pretrained model and move it to /home/workspace/experiments/pretrained_model/.
 
 We need to edit the config files to change the location of the training and validation files, as well as the location of the label_map file, pretrained weights. We also need to adjust the batch size. To do so, run the following:
 ```
@@ -96,79 +77,103 @@ A new config file has been created, `pipeline_new.config`.
 
 ### Training
 
-You will now launch your very first experiment with the Tensorflow object detection API. Move the `pipeline_new.config` to the `/home/workspace/experiments/reference` folder. Now launch the training process:
+We will launch the very first experiment with the Tensorflow object detection API. Move the `pipeline_new.config` to the `/home/workspace/experiments/reference` folder. Now launch the training process:
 * a training process:
 ```
 python experiments/model_main_tf2.py --model_dir=experiments/reference/ --pipeline_config_path=experiments/reference/pipeline_new.config
 
 ```
 
+Below are the results of the reference training experiment
+
+<img src="ref.png" width="400">  
+
+We can see that the overall loss is fluctuating and at the end of 2500 steps it is around 24 which is really high.
+
 Once the training is finished, launch the evaluation process:
 * an evaluation process:
+
+Below is the result for the evaluation process
+
+<img src="eval_met.png" width="400">  
 ```
 python experiments/model_main_tf2.py --model_dir=experiments/reference/ --pipeline_config_path=experiments/reference/pipeline_new.config --checkpoint_dir=experiments/reference/
 ```
 
-**Note**: Both processes will display some Tensorflow warnings, which can be ignored. You may have to kill the evaluation script manually using
+**Note**: Both processes will display some Tensorflow warnings, which can be ignored. We have to kill the evaluation script manually using
 `CTRL+C`.
 
-To monitor the training, you can launch a tensorboard instance by running `python -m tensorboard.main --logdir experiments/reference/`. You will report your findings in the writeup.
+To monitor the training, you can launch a tensorboard instance by running `python -m tensorboard.main --logdir experiments/reference/`. 
+
+Initially,  I implemented the reference experiment with default settings (i.e; with batch size of 2).
+
 
 ### Improve the performances
 
-Most likely, this initial experiment did not yield optimal results. However, you can make multiple changes to the config file to improve this model. One obvious change consists in improving the data augmentation strategy. The [`preprocessor.proto`](https://github.com/tensorflow/models/blob/master/research/object_detection/protos/preprocessor.proto) file contains the different data augmentation method available in the Tf Object Detection API. To help you visualize these augmentations, we are providing a notebook: `Explore augmentations.ipynb`. Using this notebook, try different data augmentation combinations and select the one you think is optimal for our dataset. Justify your choices in the writeup.
-
-Keep in mind that the following are also available:
-* experiment with the optimizer: type of optimizer, learning rate, scheduler etc
-* experiment with the architecture. The Tf Object Detection API [model zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md) offers many architectures. Keep in mind that the `pipeline.config` file is unique for each architecture and you will have to edit it.
-
-**Important:** If you are working on the workspace, your storage is limited. You may to delete the checkpoints files after each experiment. You should however keep the `tf.events` files located in the `train` and `eval` folder of your experiments. You can also keep the `saved_model` folder to create your videos.
+Most likely, this initial experiment did not yield optimal results. Hence, I have utilized different data augmentation method available in the TF object Detection API. The [`preprocessor.proto`](https://github.com/tensorflow/models/blob/master/research/object_detection/protos/preprocessor.proto) file contains the different data augmentation method available in the Tf Object Detection API. To help visualize these augmentations, the notebook can be implemented: `Explore augmentations.ipynb`. 
 
 
-For the new experiment, I have added **Augmentations** to introduce variability in the dataset so that it can handle other cases that are not reflected in the original dataset. In this case, the augmentations used in addition to the default are :
 
-random_adjust_brightness
-random_adjust_contrast
-random_adjust_hue
-random_adjust_saturation
-random_black_patches
-random_patch_gaussian
+**Important:**  Delete the checkpoints files after each experiment. However keep the `tf.events` files located in the `train` and `eval` folder of the experiments for logging the results in tensorboard. Also keep the `saved_model` folder to create videos later.
 
-Most of these augmentations are intended to simulate darker condition during night where the vision is not cleares. It also simulates bluriness that might arise during foggy conditions or from lenses. The black patches were used to mimic occlusions
+### Expriment:
+For improving the reference run, I have added **Augmentations** to introduce variability in the dataset so that it can handle other cases that are not reflected in the original dataset. In this case, the augmentations used in addition to the default are :
 
+- random_adjust_brightness and random_adjust_contrast to increase the diversity in brightness and contrast across the given images
+
+- random_adjust_hue, random_rgb_to_gray and random_adjust_saturation to mimic different light conditions (e.g. a blueish or yellowish tint caused by artificial lights)
+
+- random_patch_gaussian to mimic blurs and flares caused by different weather conditions (e.g. rain on the camera lens)
+
+- random_black_patches to mimic occlusions (i.e. caused by other objects)
+
+- I kept the already implemented augmentations (horizontal flip and image crop)
+
+
+The images given below demonstrates the augmentations:
+
+<img src="augmentations_img\download_1.png" width="200">  <img src="augmentations_img\download_2.png" width= "200"> <img src="augmentations_img\download_3.png" width="200">  <img src="augmentations_img\download.png" width= "200"> 
+
+### Further Improvements
+I have used the momentum_optimizer with cosine_decay_learning_rate.
+
+I have changed the learning rate base to 0.02, warmup_learning_rate to 0.0002.
+
+Below are the images to demonstrate the training on the train dataset and its evaluation on test dataset.
+<img src="train_2.png" width="400">  
+<img src="eval_precision.png" width="400"> 
+<img src="eval_recall.png" width="400">  
+
+From the images we can infer the loss is drastically decreased to around 0.89. Comparitively, it is far better than the reference run.Better performance is observed in the precision and recall plot. 
+
+<img src="eval_met.png" width="400">  
+
+For implementing the improved run, type the below command in the command line
+```
+python experiments/model_main_tf2.py --model_dir=experiments/experiment_2/ --pipeline_config_path=experiments/experiment_2/pipeline1.config
+
+```
+
+For evaluation
+
+```
+python experiments/model_main_tf2.py --model_dir=experiments/experiment_2/ --pipeline_config_path=experiments/experiment_2/pipeline1.config --checkpoint_dir=experiments/experiment_2/
+```
 
 ### Creating an animation
-#### Export the trained model
-Modify the arguments of the following function to adjust it to your models:
+#### Export the trained model by implementing the below command
+
 
 ```
-python experiments/exporter_main_v2.py --input_type image_tensor --pipeline_config_path experiments/reference/pipeline_new.config --trained_checkpoint_dir experiments/reference/ --output_directory experiments/reference/exported/
+python experiments/exporter_main_v2.py --input_type image_tensor --pipeline_config_path experiments/experiment_2/pipeline1.config --trained_checkpoint_dir experiments/experiment_2/ --output_directory experiments/experiment_2/exported/
 ```
 
-This should create a new folder `experiments/reference/exported/saved_model`. You can read more about the Tensorflow SavedModel format [here](https://www.tensorflow.org/guide/saved_model).
+This will create a new folder `experiments/reference/exported/saved_model`. You can read more about the Tensorflow SavedModel format [here](https://www.tensorflow.org/guide/saved_model).
 
-Finally, you can create a video of your model's inferences for any tf record file. To do so, run the following command (modify it to your files):
+Finally, create a video of your model's inferences for any tf record file. To do so, run the following command:
 ```
-python inference_video.py --labelmap_path label_map.pbtxt --model_path experiments/reference/exported/saved_model --tf_record_path /data/waymo/testing/segment-12200383401366682847_2552_140_2572_140_with_camera_labels.tfrecord --config_path experiments/reference/pipeline_new.config --output_path animation.gif
+python inference_video.py --labelmap_path label_map.pbtxt --model_path experiments/experiment_2/exported/saved_model --tf_record_path /data/waymo/testing/segment-12200383401366682847_2552_140_2572_140_with_camera_labels.tfrecord --config_path experiments/experiment_2/pipeline1.config --output_path animation.gif
 ```
 
-## Submission Template
-
-### Project overview
-This section should contain a brief description of the project and what we are trying to achieve. Why is object detection such an important component of self driving car systems?
-
-### Set up
-This section should contain a brief description of the steps to follow to run the code for this repository.
-
-### Dataset
-#### Dataset analysis
-This section should contain a quantitative and qualitative description of the dataset. It should include images, charts and other visualizations.
-#### Cross validation
-This section should detail the cross validation strategy and justify your approach.
-
-### Training
-#### Reference experiment
-This section should detail the results of the reference experiment. It should includes training metrics and a detailed explanation of the algorithm's performances.
-
-#### Improve on the reference
-This section should highlight the different strategies you adopted to improve your model. It should contain relevant figures and details of your findings.
+The video can be found below:
+<img src="animation.gif" width="400">  
